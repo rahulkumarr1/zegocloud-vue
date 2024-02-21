@@ -6,10 +6,16 @@
           <div id="local-video"></div>
         </div>
         <div>
+          <div id="playVideo"></div>
+        </div>
+        <div>
           <a href="#" @click="loginRoom()" class="btn btn-success">Login Room</a>
           <a href="#" @click="logoutRoom()" class="btn btn-danger">Logout Room</a>
           <a href="#" @click="startPlaying()" class="btn btn-info">Start</a>
           <a href="#" @click="stopPlaying()" class="btn btn-warning">Stop</a>
+          <a href="#" @click="startMixTask()" class="btn btn-warning">startMixTask</a>
+          <a href="#" @click="startMixTask()" class="btn btn-warning">stopMixTask</a>
+          <a href="#" @click="StartPlayingMixedStream()" class="btn btn-warning">StartPlayingMixedStream</a>
         </div>
 
       </div>
@@ -62,6 +68,13 @@ export default {
       connectStatus: 'DISCONNECTED',
       audioDeviceList: [],
       videoDeviceList: [],
+
+      streamFirstID: '0007',
+      streamSecondID: '0008',
+      mixed: false,
+      mixStreamID: 'mix_' + Date.now(),
+      taskID: '00070008',
+
       videoCodec: localStorage.getItem('VideoCodec') === 'H.264' ? 'H264' : 'VP8',
       zg: null
     }
@@ -243,6 +256,77 @@ export default {
       } catch (err) {
         return { errorCode: 1, extendedData: JSON.stringify(err) }
       }
+    },
+    async startMixerTask(taskID, streamList, mixStreamId) {
+      try {
+        const res = await this.zg.startMixerTask({
+          taskID,
+          inputList: streamList,
+          outputList: [mixStreamId],
+          outputConfig: {
+            outputBitrate: 300,
+            outputFPS: 15,
+            outputWidth: 320,
+            outputHeight: 480
+          }
+        });
+        this.mixerOutputList = JSON.parse(res.extendedData).mixerOutputList;
+        return res.errorCode;
+      } catch (err) {
+        return 1;
+      }
+    },
+
+    async stopMixerTask(taskID) {
+      await this.zg.stopMixerTask(taskID);
+      // clearStream('mixed');
+    },
+    async startMixTask() {
+      const firstId = this.FirstStreamID;
+      const secondId = this.SecondStreamID;
+      const mixStreamID = this.mixStreamID;
+      const mixed = this.mixed;
+
+      const streamList = [
+        {
+          streamID: firstId,
+          layout: {
+            top: 0,
+            left: 0,
+            bottom: 240,
+            right: 320
+          }
+        },
+        {
+          streamID: secondId,
+          layout: {
+            top: 240,
+            left: 0,
+            bottom: 480,
+            right: 320
+          }
+        }
+      ];
+
+      if (!mixed) {
+        const flag = await startMixerTask(mixStreamID, streamList, mixStreamID);
+        if (flag === 0) {
+          mixed = true;
+        } else {
+          this.stopMixerTask(mixStreamID);
+          mixed = false;
+        }
+      }
+    },
+    async StartPlayingMixedStream() {
+      if (!this.played) {
+        const stream = await this.zg.startPlayingStream(streamID)
+        const streamView = this.zg.createRemoteStreamView(stream);
+        streamView.play("playVideo")
+        this.played = true;
+      } else {
+        this.played = false;
+      }
     }
   },
   watch: {
@@ -255,7 +339,7 @@ export default {
       }
     }
   },
-  mounted() { 
+  mounted() {
     this.createZegoExpressEngine();
     this.checkSystemRequirements()
     this.initEvent();

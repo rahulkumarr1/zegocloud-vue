@@ -6,9 +6,12 @@
           <video ref="remoteVideo" autoplay playsinline :muted="true" style="width: 300px;"></video>
         </div>
         <div>
+          <div id="local-video"></div>
+        </div>
+        <div>
           <!-- <a href="#" @click="loginRoom()" class="btn btn-success">Login Room</a> -->
           <a href="#" @click="logoutRoom()" class="btn btn-danger">Logout Room</a> 
-          <!-- <a href="#" @click="startPlaying()" class="btn btn-info">Start</a> -->
+          <a href="#" @click="startPublishing()" class="btn btn-info">Start</a>
           <a href="#" @click="stopPlaying()" class="btn btn-warning">Stop</a>
         </div>
 
@@ -45,11 +48,13 @@ export default {
       token: "",
       room_id: "0007",
       streamID: "0007",
+      streamSecondID: '0008',
       isChecked: false,
       isLogin: false,
       localStream: null,
       remoteStream: null,
       published: false,
+      publishVideo: false,
       played: false,
       mesaageList: [],
       userMsg: null,
@@ -164,7 +169,32 @@ export default {
       } catch (err) {
         return { errorCode: 1, extendedData: JSON.stringify(err) }
       }
-    }
+    },
+    startPublishing() {
+      const config = {
+        camera: {
+          video: true,
+          audio: true,
+        }
+      };
+      const flag = this.startPlayingStream(this.streamSecondID, config);
+      this.publishVideo = true;
+
+    },
+    async startPublishingStream(stream_Id, options = {}) {
+      //  Start Publishing Stream
+      try {
+        this.localStream = await this.zg.createZegoStream(options);
+        console.log(options);
+        // Play preview of the Stream.
+        this.zg.startPublishingStream(stream_Id, this.localStream);
+        this.localStream.playVideo(document.querySelector("#local-video"));
+        this.isload = true;
+        return true;
+      } catch (err) {
+        return false;
+      }
+    },
   },
   watch: {
     token() {
