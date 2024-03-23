@@ -6,7 +6,7 @@
           <video ref="remoteVideo" autoplay playsinline :muted="true" style="width: 300px;"></video>
         </div>
         <div>
-          <div id="local-video"></div>
+          <div id="local-video1"></div>
         </div>
         <div>
           <!-- <a href="#" @click="loginRoom()" class="btn btn-success">Login Room</a> -->
@@ -142,7 +142,7 @@ export default {
     },
     stopPlaying() {
       const flag = this.stopPlayingStream(this.streamID);
-    },
+    }, 
     logoutRoom() {
       this.zg.logoutRoom(this.room_id);
     },
@@ -177,9 +177,12 @@ export default {
           audio: true,
         }
       };
-      const flag = this.startPlayingStream(this.streamSecondID, config);
+      const flag = this.startPublishingStream(this.streamSecondID, config);
       this.publishVideo = true;
 
+    },
+    stopPublish() {
+      const flag = this.stoptPublishingStream(this.streamSecondID);
     },
     async startPublishingStream(stream_Id, options = {}) {
       //  Start Publishing Stream
@@ -188,12 +191,16 @@ export default {
         console.log(options);
         // Play preview of the Stream.
         this.zg.startPublishingStream(stream_Id, this.localStream);
-        this.localStream.playVideo(document.querySelector("#local-video"));
+        this.localStream.playVideo(document.querySelector("#local-video1"));
         this.isload = true;
         return true;
       } catch (err) {
         return false;
       }
+    },
+    async stoptPublishingStream(stream_Id) {
+      this.zg.stopPublishingStream(stream_Id);
+      this.zg.destroyStream(this.localStream);
     },
   },
   watch: {

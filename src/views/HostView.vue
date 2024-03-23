@@ -14,10 +14,10 @@
           <a href="#" @click="startPlaying()" class="btn btn-info">Start</a>
           <a href="#" @click="stopPlaying()" class="btn btn-warning">Stop</a>
           <a href="#" @click="startMixTask()" class="btn btn-warning">startMixTask</a>
-          <a href="#" @click="startMixTask()" class="btn btn-warning">stopMixTask</a>
+          <a href="#" @click="stopMixerTask()" class="btn btn-warning">stopMixTask</a>
           <a href="#" @click="StartPlayingMixedStream()" class="btn btn-warning">StartPlayingMixedStream</a>
         </div>
-
+{{ mixerOutputList }}
       </div>
       <div class="col-sm-6">
         <h3>Message</h3>
@@ -68,7 +68,7 @@ export default {
       connectStatus: 'DISCONNECTED',
       audioDeviceList: [],
       videoDeviceList: [],
-
+      mixerOutputList: null,
       streamFirstID: '0007',
       streamSecondID: '0008',
       mixed: false,
@@ -270,8 +270,9 @@ export default {
             outputHeight: 480
           }
         });
+        console.log(res,"++++++++++++++++++===================================== mixtask log");
         this.mixerOutputList = JSON.parse(res.extendedData).mixerOutputList;
-        return res.errorCode;
+        // return res.errorCode;
       } catch (err) {
         return 1;
       }
@@ -285,7 +286,7 @@ export default {
       const firstId = this.FirstStreamID;
       const secondId = this.SecondStreamID;
       const mixStreamID = this.mixStreamID;
-      const mixed = this.mixed;
+      let mixed = this.mixed;
 
       const streamList = [
         {
@@ -309,20 +310,26 @@ export default {
       ];
 
       if (!mixed) {
-        const flag = await startMixerTask(mixStreamID, streamList, mixStreamID);
+        const flag = await this.startMixerTask(mixStreamID, streamList, mixStreamID);
+      
+        console.log(flag,"startMixerTask =================================")
         if (flag === 0) {
           mixed = true;
+          return flag;
         } else {
-          this.stopMixerTask(mixStreamID);
+          // this.stopMixerTask(mixStreamID);
           mixed = false;
         }
       }
     },
     async StartPlayingMixedStream() {
       if (!this.played) {
+        console.log(this.mixerOutputList);
+        const streamID = this.mixerOutputList[0].streamID;
         const stream = await this.zg.startPlayingStream(streamID)
         const streamView = this.zg.createRemoteStreamView(stream);
         streamView.play("playVideo")
+        console.log('Start Playing Mixed Stream', 'Stop Playing Mixed Stream');
         this.played = true;
       } else {
         this.played = false;
